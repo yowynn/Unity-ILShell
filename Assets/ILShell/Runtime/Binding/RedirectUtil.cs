@@ -43,12 +43,15 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
-                var rsp = ILIntepreter.Minus(esp, 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
+                }
                 var ret = handler(instance);
-                return ILIntepreter.PushObject(rsp, mStack, ret);
+                esp = ILIntepreter.PushObject(esp, mStack, ret);
+                return esp;
             });
         }
 
@@ -58,12 +61,14 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
-                var rsp = ILIntepreter.Minus(esp, 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
+                }
                 handler(instance);
-                return rsp;
+                return esp;
             });
         }
 
@@ -75,19 +80,24 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
-                var rsp = ILIntepreter.Minus(esp, paramLength + 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
                 var args = new object[paramLength];
-                for (int i = 0; i < paramLength; ++i)
+                for (int i = paramLength - 1; i >= 0; --i)
                 {
-                    isp = ILIntepreter.Add(rsp, i + 1);
-                    var arg = paramTypes[i].CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
+                    var paramType = paramTypes[i];
+                    var arg = paramType.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
                     args[i] = WrapObject(appdomain, arg);
+                    if (!paramType.IsPrimitive)
+                        intp.Free(esp);
+                }
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
                 }
                 var ret = handler(instance, args);
-                return ILIntepreter.PushObject(rsp, mStack, ret);
+                esp = ILIntepreter.PushObject(esp, mStack, ret);
+                return esp;
             });
         }
 
@@ -99,19 +109,23 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
-                var rsp = ILIntepreter.Minus(esp, paramLength + 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
                 var args = new object[paramLength];
-                for (int i = 0; i < paramLength; ++i)
+                for (int i = paramLength - 1; i >= 0; --i)
                 {
-                    isp = ILIntepreter.Add(rsp, i + 1);
-                    var arg = paramTypes[i].CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
+                    var paramType = paramTypes[i];
+                    var arg = paramType.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
                     args[i] = WrapObject(appdomain, arg);
+                    if (!paramType.IsPrimitive)
+                        intp.Free(esp);
+                }
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
                 }
                 handler(instance, args);
-                return rsp;
+                return esp;
             });
         }
 
@@ -121,13 +135,16 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
+                }
                 var genericType = method.GenericArguments?[0];
-                var rsp = ILIntepreter.Minus(esp, 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
                 var ret = handler(instance, genericType);
-                return ILIntepreter.PushObject(rsp, mStack, ret);
+                esp = ILIntepreter.PushObject(esp, mStack, ret);
+                return esp;
             });
         }
 
@@ -137,13 +154,15 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
+                }
                 var genericType = method.GenericArguments?[0];
-                var rsp = ILIntepreter.Minus(esp, 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
                 handler(instance, genericType);
-                return rsp;
+                return esp;
             });
         }
 
@@ -155,20 +174,25 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
-                var genericType = method.GenericArguments?[0];
-                var rsp = ILIntepreter.Minus(esp, paramLength + 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
                 var args = new object[paramLength];
-                for (int i = 0; i < paramLength; ++i)
+                for (int i = paramLength - 1; i >= 0; --i)
                 {
-                    isp = ILIntepreter.Add(rsp, i + 1);
-                    var arg = paramTypes[i].CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
+                    var paramType = paramTypes[i];
+                    var arg = paramType.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
                     args[i] = WrapObject(appdomain, arg);
+                    if (!paramType.IsPrimitive)
+                        intp.Free(esp);
                 }
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
+                }
+                var genericType = method.GenericArguments?[0];
                 var ret = handler(instance, genericType, args);
-                return ILIntepreter.PushObject(rsp, mStack, ret);
+                esp = ILIntepreter.PushObject(esp, mStack, ret);
+                return esp;
             });
         }
 
@@ -180,20 +204,24 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
-                var genericType = method.GenericArguments?[0];
-                var rsp = ILIntepreter.Minus(esp, paramLength + 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
                 var args = new object[paramLength];
-                for (int i = 0; i < paramLength; ++i)
+                for (int i = paramLength - 1; i >= 0; --i)
                 {
-                    isp = ILIntepreter.Add(rsp, i + 1);
-                    var arg = paramTypes[i].CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
+                    var paramType = paramTypes[i];
+                    var arg = paramType.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
                     args[i] = WrapObject(appdomain, arg);
+                    if (!paramType.IsPrimitive)
+                        intp.Free(esp);
                 }
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
+                }
+                var genericType = method.GenericArguments?[0];
                 handler(instance, genericType, args);
-                return rsp;
+                return esp;
             });
         }
 
@@ -205,20 +233,25 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
-                var genericTypes = method.GenericArguments;
-                var rsp = ILIntepreter.Minus(esp, paramLength + 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
                 var args = new object[paramLength];
-                for (int i = 0; i < paramLength; ++i)
+                for (int i = paramLength - 1; i >= 0; --i)
                 {
-                    isp = ILIntepreter.Add(rsp, i + 1);
-                    var arg = paramTypes[i].CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
+                    var paramType = paramTypes[i];
+                    var arg = paramType.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
                     args[i] = WrapObject(appdomain, arg);
+                    if (!paramType.IsPrimitive)
+                        intp.Free(esp);
                 }
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
+                }
+                var genericTypes = method.GenericArguments;
                 var ret = handler(instance, appdomain, genericTypes, args);
-                return ILIntepreter.PushObject(rsp, mStack, ret);
+                esp = ILIntepreter.PushObject(esp, mStack, ret);
+                return esp;
             });
         }
 
@@ -230,20 +263,24 @@ namespace ILShell.Runtime.Binding
             domain.RegisterCLRMethodRedirection(methodInfo, delegate (ILIntepreter intp, StackObject* esp, IList<object> mStack, CLRMethod method, bool isNewObj)
             {
                 var appdomain = intp.AppDomain;
-                var genericTypes = method.GenericArguments;
-                var rsp = ILIntepreter.Minus(esp, paramLength + 1);
-                var isp = rsp;
-                var instance = type.CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
-                intp.Free(isp);
                 var args = new object[paramLength];
-                for (int i = 0; i < paramLength; ++i)
+                for (int i = paramLength - 1; i >= 0; --i)
                 {
-                    isp = ILIntepreter.Add(rsp, i + 1);
-                    var arg = paramTypes[i].CheckCLRTypes(StackObject.ToObject(isp, appdomain, mStack));
+                    var paramType = paramTypes[i];
+                    var arg = paramType.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
                     args[i] = WrapObject(appdomain, arg);
+                    if (!paramType.IsPrimitive)
+                        intp.Free(esp);
                 }
+                object instance = null;
+                if (method.HasThis)
+                {
+                    instance = type.CheckCLRTypes(StackObject.ToObject(--esp, appdomain, mStack));
+                    intp.Free(esp);
+                }
+                var genericTypes = method.GenericArguments;
                 handler(instance, appdomain, genericTypes, args);
-                return rsp;
+                return esp;
             });
         }
 
@@ -277,7 +314,7 @@ namespace ILShell.Runtime.Binding
             }
             else
             {
-#if UNITY_2021_2_OR_NEWERd
+#if UNITY_2021_2_OR_NEWER
                 if (genericParameterCount < 0)
                     method = type.GetMethod(name, bindingAttr, null, types, null);
                 else
@@ -297,7 +334,6 @@ namespace ILShell.Runtime.Binding
             }
             if (method == null)
                 throw new Exception("Cannot Find Method!!!");
-            UnityEngine.Debug.Log($"DDDDDD--{method}--DDDDD{method.IsStatic}");
             return method;
         }
     }
